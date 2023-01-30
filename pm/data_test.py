@@ -1,6 +1,10 @@
+"""Tests for data module."""
+
 import unittest
 
+import torch.utils.data as torch_data
 from pm import data as data_module
+
 
 
 class TestPairwiseDataset(unittest.TestCase):
@@ -22,10 +26,24 @@ class TestPairwiseDataset(unittest.TestCase):
         self.assertIsNotNone(ds)
 
     def test_create_summarize_comparison_dataset(self):
-        ds = data_module.create_comparison_dataset('CarperAI/openai_summarize_comparisons', split='train')
+        ds = data_module.preprocess_dataset('CarperAI/openai_summarize_comparisons', split='test')
         self.assertIsNotNone(ds)
         self.assertEqual(len(ds), 92534)
 
+    def test_data_collator(self):
+        preprocessed = data_module.preprocess_dataset('CarperAI/openai_summarize_comparisons', split='test')
+        tokenizer = data_module.get_tokenizer('EleutherAI/gpt-j-6B')
+
+        # Make pairwise datasets for training
+        ds = data_module.PairwiseDataset(preprocessed, tokenizer, max_length=30)
+
+        # Create the collator to gather batches of pairwise comparisons
+        data_collator = data_module.DataCollatorReward()
+
+        dl = torch_data.DataLoader(ds, batch_size=4, shuffle=False, collate_fn=data_collator)
+
+        batch = next(iter(dl))
+        self.assertIsNotNone(batch)
 
 if __name__ == '__main__':
     unittest.main()

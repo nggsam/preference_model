@@ -17,22 +17,24 @@ DATASET_TYPES = {
 SPLIT_TYPES = {'train', 'test'}
 
 
-def _process_openai_summarize_comparisons(dataset):
-    """Preprocesses OpenAI Summarize Comparisons dataset."""
-    pairs = []
-    for sample in tqdm(dataset):
-        pair = {}
-        prompt = sample["prompt"]
-        chosen_summary = sample["chosen"]
-        rejected_summary = sample["rejected"]
-        if chosen_summary == rejected_summary:
-            continue
-        if len(chosen_summary.split()) < 5 or len(rejected_summary.split()) < 5:
-            continue
-        pair["chosen"] = prompt + "\n" + chosen_summary
-        pair["rejected"] = prompt + "\n" + rejected_summary
-        pairs.append(pair)
-    return pairs
+def _process_openai_summarize_comparisons(sample):
+    """Preprocesses OpenAI Summarize Comparisons dataset.
+
+    Args:
+        sample: a raw item from dataset.
+    """
+    pair = {}
+    prompt = sample["prompt"]
+    chosen_summary = sample["chosen"]
+    rejected_summary = sample["rejected"]
+    if chosen_summary == rejected_summary:
+        return None
+    if len(chosen_summary.split()) < 5 or len(rejected_summary.split()) < 5:
+        return None
+    pair["chosen"] = prompt + "\n" + chosen_summary
+    pair["rejected"] = prompt + "\n" + rejected_summary
+
+    return pair
 
 
 def get_tokenizer(tokenizer_type: str):
@@ -57,6 +59,7 @@ def preprocess_dataset(dataset_type, split) -> Sequence[dict[str, str]]:
 
     if dataset_type == 'CarperAI/openai_summarize_comparisons':
         dataset = load_dataset(dataset_path, split=split)
+        # TODO: replace this upfront cost with iterable option (only preprocess when loading).
         return _process_openai_summarize_comparisons(dataset)
     else:
         raise ValueError(dataset_type)
@@ -102,7 +105,8 @@ class PairwiseDataset(Dataset):
 
 class DataCollatorReward:
     def __call__(self, data):
-        batch = {"input_ids": torch.cat([f[0] for f in data] + [f[2] for f in data]),
-                 "attention_mask": torch.cat([f[1] for f in data] + [f[3] for f in data]),
-                 "labels": torch.tensor([0] * len(data) + [1] * len(data))}
+        batch = {
+            "input_ids": data['input_ids'],
+            "mask": data['mask']
+        }
         return batch
