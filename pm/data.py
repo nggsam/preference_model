@@ -1,9 +1,5 @@
-from typing import Sequence
-
-import torch
 from datasets import load_dataset
 from torch.utils.data import Dataset
-from tqdm import tqdm
 from transformers import AutoTokenizer
 
 TOKENIZER_TYPES = {
@@ -17,12 +13,24 @@ DATASET_TYPES = {
 SPLIT_TYPES = {'train', 'test'}
 
 
-def _process_openai_summarize_comparisons(sample):
+def _process_openai_summarize_comparisons(sample, tokenizer, max_length):
     """Preprocesses OpenAI Summarize Comparisons dataset.
 
     Args:
         sample: a raw item from dataset.
     """
+
+    def _tokenize(item: str):
+        """Tokenizes item into encoding dict with input_ids and mask."""
+        return tokenizer(
+            f"{tokenizer.bos_token} {item} {tokenizer.eos_token}",
+            truncation=True,
+            max_length=max_length,
+            padding="max_length",
+            return_tensors="pt",
+        )
+
+    # Turns item into the pair format.
     pair = {}
     prompt = sample["prompt"]
     chosen_summary = sample["chosen"]
@@ -34,7 +42,15 @@ def _process_openai_summarize_comparisons(sample):
     pair["chosen"] = prompt + "\n" + chosen_summary
     pair["rejected"] = prompt + "\n" + rejected_summary
 
-    return pair
+    # Tokenize and format into input_ids and mask for chosen and rejected string.
+    input_ids = {}
+    mask = {}
+    for item_type in ('chosen', 'rejected'):
+        encoded_dict = _tokenize(pair[item_type])
+        input_ids[item_type] = encoded_dict['input_ids'][0]  # [1, max_length] so we index into 0 to get [max_length]
+        mask[item_type] = encoded_dict['attention_mask'][0]  # [1, max_length] so we index into 0 to get [max_length]
+
+    return {'input_ids': input_ids, 'mask': mask}
 
 
 def get_tokenizer(tokenizer_type: str):
@@ -50,57 +66,42 @@ def get_tokenizer(tokenizer_type: str):
         raise ValueError(tokenizer_type)
 
 
-def preprocess_dataset(dataset_type, split) -> Sequence[dict[str, str]]:
-    """Preprocesses dataset into expected format."""
-    assert dataset_type in DATASET_TYPES
-    assert split in SPLIT_TYPES
-
-    dataset_path = DATASET_TYPES[dataset_type]
-
-    if dataset_type == 'CarperAI/openai_summarize_comparisons':
-        dataset = load_dataset(dataset_path, split=split)
-        # TODO: replace this upfront cost with iterable option (only preprocess when loading).
-        return _process_openai_summarize_comparisons(dataset)
-    else:
-        raise ValueError(dataset_type)
-
-
 class PairwiseDataset(Dataset):
     """Dataset that yields each item as a dict of ['input_ids', 'mask']."""
-    def __init__(self, pairs, tokenizer, max_length):
+
+    def __init__(self, dataset_type: str, tokenizer, max_length: int, split: str):
         """Initializes the dataset.
 
         Args:
-            pairs: a dict of ['chosen', 'rejected'], whose values are string.
+            dataset_type: a str for type of dataset to load.
+            # dict of ['chosen', 'rejected'], whose values are string.
             tokenizer: a tokenizer object.
             max_length: an int that is the maximum length for tokenizer's padding operation.
         """
-        def _process(item: str) -> dict:
-            return tokenizer(
-                f"{tokenizer.bos_token} {item} {tokenizer.eos_token}",
-                truncation=True,
-                max_length=max_length,
-                padding="max_length",
-                return_tensors="pt",
-            )
+        assert dataset_type in DATASET_TYPES
+        assert split in SPLIT_TYPES
 
-        self.items = []
+        self._tokenizer = tokenizer
+        self._max_length = max_length
+        self._split = split
+        dataset_path = DATASET_TYPES[dataset_type]
 
-        for pair in tqdm(pairs):
-            input_ids = {}
-            mask = {}
-            for item_type in ('chosen', 'rejected'):
-                encoded_dict = _process(pair[item_type])
-                input_ids[item_type] = encoded_dict['input_ids']
-                mask[item_type] = encoded_dict['attention_mask']
-
-            self.items.append({'input_ids': input_ids, 'mask': mask})
+        if dataset_type == 'CarperAI/openai_summarize_comparisons':
+            self._dataset = load_dataset(dataset_path, split=split)
+            self._process_fn = _process_openai_summarize_comparisons
+        else:
+            raise ValueError(dataset_type)
 
     def __len__(self):
-        return len(self.items)
+        return len(self._dataset)
 
     def __getitem__(self, idx):
-        return self.items[idx]
+        sample = self._dataset[idx]
+        processed = self._process_fn(sample,
+                                     tokenizer=self._tokenizer,
+                                     max_length=self._max_length)
+
+        return processed
 
 
 class DataCollatorReward:

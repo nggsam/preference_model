@@ -2,9 +2,10 @@
 
 import unittest
 
+import torch
 import torch.utils.data as torch_data
-from pm import data as data_module
 
+from pm import data as data_module
 
 
 class TestPairwiseDataset(unittest.TestCase):
@@ -30,20 +31,40 @@ class TestPairwiseDataset(unittest.TestCase):
         self.assertIsNotNone(ds)
         self.assertEqual(len(ds), 92534)
 
-    def test_data_collator(self):
-        preprocessed = data_module.preprocess_dataset('CarperAI/openai_summarize_comparisons', split='test')
+    def test_dataloader(self):
+        batch_size = 16
+        max_length = 520
         tokenizer = data_module.get_tokenizer('EleutherAI/gpt-j-6B')
 
         # Make pairwise datasets for training
-        ds = data_module.PairwiseDataset(preprocessed, tokenizer, max_length=30)
+        ds = data_module.PairwiseDataset('CarperAI/openai_summarize_comparisons',
+                                         tokenizer,
+                                         max_length=max_length,
+                                         split='test')
 
-        # Create the collator to gather batches of pairwise comparisons
-        data_collator = data_module.DataCollatorReward()
-
-        dl = torch_data.DataLoader(ds, batch_size=4, shuffle=False, collate_fn=data_collator)
+        dl = torch_data.DataLoader(ds, batch_size=batch_size, shuffle=False)
 
         batch = next(iter(dl))
         self.assertIsNotNone(batch)
+        # Expected keys.
+        self.assertSetEqual(set(batch.keys()), {'input_ids', 'mask'})
+        # Expected shapes.
+        self.assertEqual(batch['input_ids']['chosen'].shape,
+                         (batch_size, max_length))
+        self.assertEqual(batch['mask']['chosen'].shape,
+                         (batch_size, max_length))
+
+        # Expected true lengths (before padding).
+        lengths = batch['mask']['chosen'].sum(dim=1)
+        lengths = lengths.unsqueeze(-1)  # Unsqueeze for torch.gather.
+        input_ids = batch['input_ids']['chosen']
+        gathered_indices = torch.gather(input_ids, dim=1, index=lengths).squeeze(-1)
+        all_pad_token_ids = torch.tensor(batch_size * [tokenizer.pad_token_id], dtype=gathered_indices.dtype)
+        self.assertTrue(torch.equal(
+            gathered_indices,
+            torch.tensor(batch_size * [tokenizer.pad_token_id], dtype=gathered_indices.dtype))
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
