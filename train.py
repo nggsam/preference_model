@@ -3,23 +3,14 @@
 This is the main entry point to train a preference model (or reward model). WIP.
 """
 
-import dataclasses
-
-from transformers import TrainingArguments, HfArgumentParser
+from transformers import TrainingArguments
 
 from pm.model import GPTRewardModel
-
-
-@dataclasses.dataclass
-class HParams:
-    pretrained_model = 'CarperAI/openai_summarize_tldr_sft'
-    use_deepspeed = False
-
-
-parser = HfArgumentParser(HParams)
-parser.add_argument('--use_deepspeed', help='Whether to enable deepspeed.')
+from pm.utils import HParams
+from pm.utils import get_args_parser
 
 if __name__ == "__main__":
+    parser = get_args_parser()
     hparams: HParams = parser.parse_args_into_dataclasses()[0]
 
     training_args = TrainingArguments(
@@ -43,5 +34,5 @@ if __name__ == "__main__":
         save_total_limit=1,
     )
 
-    # Initialize the reward model from the (supervised) fine-tuned GPT-J
+    # Initialize the reward model from the (supervised) fine-tuned GPT-J.
     model = GPTRewardModel(hparams.pretrained_model)

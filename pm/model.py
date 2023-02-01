@@ -1,10 +1,13 @@
 import torch
 from torch import nn
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM
+
+from pm.data import get_tokenizer
+from pm.utils import HParams
 
 
 class GPTRewardModel(nn.Module):
-    def __init__(self, model_path):
+    def __init__(self, model_path, hparams: HParams):
         super().__init__()
         model = AutoModelForCausalLM.from_pretrained(model_path)
         self.config = model.config
@@ -16,24 +19,23 @@ class GPTRewardModel(nn.Module):
         )
         self.transformer = model.transformer
         self.v_head = nn.Linear(self.config.n_embd, 1, bias=False)
-        self.tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
-        self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.PAD_ID = self.tokenizer(self.tokenizer.pad_token)["input_ids"][0]
+        self.tokenizer = get_tokenizer(hparams.tokenizer_type)
+        self.hparams = hparams
 
     def forward(
-        self,
-        input_ids=None,
-        past_key_values=None,
-        attention_mask=None,
-        token_type_ids=None,
-        position_ids=None,
-        head_mask=None,
-        inputs_embeds=None,
-        mc_token_ids=None,
-        labels=None,
-        return_dict=False,
-        output_attentions=False,
-        output_hidden_states=False,
+            self,
+            input_ids=None,
+            past_key_values=None,
+            attention_mask=None,
+            token_type_ids=None,
+            position_ids=None,
+            head_mask=None,
+            inputs_embeds=None,
+            mc_token_ids=None,
+            labels=None,
+            return_dict=False,
+            output_attentions=False,
+            output_hidden_states=False,
     ):
         transformer_outputs = self.transformer(
             input_ids,

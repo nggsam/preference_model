@@ -58,12 +58,10 @@ class TestPairwiseDataset(unittest.TestCase):
         lengths = batch['mask']['chosen'].sum(dim=1)
         lengths = lengths.unsqueeze(-1)  # Unsqueeze for torch.gather.
         input_ids = batch['input_ids']['chosen']
+        # Indexing into lengths should result in padding tokens only.
         gathered_indices = torch.gather(input_ids, dim=1, index=lengths).squeeze(-1)
         all_pad_token_ids = torch.tensor(batch_size * [tokenizer.pad_token_id], dtype=gathered_indices.dtype)
-        self.assertTrue(torch.equal(
-            gathered_indices,
-            torch.tensor(batch_size * [tokenizer.pad_token_id], dtype=gathered_indices.dtype))
-        )
+        self.assertTrue(torch.equal(gathered_indices, all_pad_token_ids))
 
 
 if __name__ == '__main__':

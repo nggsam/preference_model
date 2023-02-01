@@ -1,3 +1,4 @@
+import torch
 from datasets import load_dataset
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer
@@ -102,12 +103,3 @@ class PairwiseDataset(Dataset):
                                      max_length=self._max_length)
 
         return processed
-
-
-class DataCollatorReward:
-    def __call__(self, data):
-        batch = {
-            "input_ids": data['input_ids'],
-            "mask": data['mask']
-        }
-        return batch
