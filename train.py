@@ -12,6 +12,7 @@ from pm.utils import get_args_parser
 if __name__ == "__main__":
     parser = get_args_parser()
     hparams: HParams = parser.parse_args_into_dataclasses()[0]
+    print(hparams)
 
     training_args = TrainingArguments(
         output_dir="rm_checkpoint/",
@@ -34,5 +35,8 @@ if __name__ == "__main__":
         save_total_limit=1,
     )
 
-    # Initialize the reward model from the (supervised) fine-tuned GPT-J.
-    model = GPTRewardModel(hparams.pretrained_model)
+    print(hparams)
+    # Initialize the reward model.
+    model = GPTRewardModel(hparams)
+
+

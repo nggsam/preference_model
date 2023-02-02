@@ -1,12 +1,15 @@
-import torch
 from datasets import load_dataset
+import torch
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 
+# Tokenizer name -> Path to tokenizer (online or offline loading).
 TOKENIZER_TYPES = {
-    'EleutherAI/gpt-j-6B': 'EleutherAI/gpt-j-6B'
+    'EleutherAI/gpt-j-6B': 'EleutherAI/gpt-j-6B',
+    'gpt2': 'gpt2'
 }
 
+# Dataset name -> Path to dataset (online or offline loading).
 DATASET_TYPES = {
     'CarperAI/openai_summarize_comparisons': 'CarperAI/openai_summarize_comparisons'
 }
@@ -51,20 +54,28 @@ def _process_openai_summarize_comparisons(sample, tokenizer, max_length):
         input_ids[item_type] = encoded_dict['input_ids'][0]  # [1, max_length] so we index into 0 to get [max_length]
         mask[item_type] = encoded_dict['attention_mask'][0]  # [1, max_length] so we index into 0 to get [max_length]
 
-    return {'input_ids': input_ids, 'mask': mask}
+    # Get the index where trajectories between chosen and rejected diverge.
+    divergence_indices = torch.nonzero(input_ids['chosen'] != input_ids['rejected'])
+    assert len(divergence_indices) > 0 and divergence_indices[0] > 0
+
+    return {'input_ids': input_ids, 'mask': mask, 'divergence_index': divergence_indices[0]}
 
 
 def get_tokenizer(tokenizer_type: str):
     """Gets tokenizer and add some possible missing tokens (padding, etc)."""
     assert tokenizer_type in TOKENIZER_TYPES
 
-    if tokenizer_type == 'EleutherAI/gpt-j-6B':
-        tokenizer_path = TOKENIZER_TYPES[tokenizer_type]
-        tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
-        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-        return tokenizer
+    tokenizer_path = TOKENIZER_TYPES[tokenizer_type]
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+
+    if tokenizer_type in {'EleutherAI/gpt-j-6B', 'gpt2'}:
+        # Add padding token. Use EOS token because we'll mask it out anyway.
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
     else:
-        raise ValueError(tokenizer_type)
+        raise ValueError(tokenizer_type, f'Unexpected tokenizer type: {tokenizer_type}')
+
+    return tokenizer
 
 
 class PairwiseDataset(Dataset):

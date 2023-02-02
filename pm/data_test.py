@@ -47,12 +47,14 @@ class TestPairwiseDataset(unittest.TestCase):
         batch = next(iter(dl))
         self.assertIsNotNone(batch)
         # Expected keys.
-        self.assertSetEqual(set(batch.keys()), {'input_ids', 'mask'})
+        self.assertSetEqual(set(batch.keys()), {'input_ids', 'mask', 'divergence_index'})
         # Expected shapes.
         self.assertEqual(batch['input_ids']['chosen'].shape,
                          (batch_size, max_length))
         self.assertEqual(batch['mask']['chosen'].shape,
                          (batch_size, max_length))
+        self.assertEqual(batch['divergence_index'].shape,
+                         (batch_size, 1))
 
         # Expected true lengths (before padding).
         lengths = batch['mask']['chosen'].sum(dim=1)
