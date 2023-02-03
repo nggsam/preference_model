@@ -3,7 +3,7 @@ from torch import nn
 from transformers import AutoModelForCausalLM
 
 from pm.data import get_tokenizer
-from pm.utils import batch_get_mask_equal_or_larger_than_indices
+from pm.loss import pairwise_loss
 from pm.utils import HParams
 
 # Model name -> Path to model weights (online or offline loading).
@@ -42,6 +42,10 @@ class GPTRewardModel(nn.Module):
 
         return model
 
+    # TODO: Add inference mode.
+    # TODO: Separate out into a loss section instead.
+    # TODO: Train to make sure that loss is going down.
+    # TODO: Add metrics to measure accuracy while training.
     def forward(self, input_ids, mask=None, inference=False, divergence_index=None):
         # Concat 'chosen' and 'rejected' for batch computation of both.
         chosen_input_ids, rejected_input_ids = input_ids['chosen'], input_ids['rejected']
@@ -54,29 +58,13 @@ class GPTRewardModel(nn.Module):
         all_mask = torch.concat((mask['chosen'], mask['rejected']), dim=0)
         # hidden_states: [batch_size * 2, seq_len, h_dim].
         hidden_states = self.transformer(all_input_ids, attention_mask=all_mask).last_hidden_state
-
         # rewards: [batch_size * 2, seq_len].
         rewards = self.v_head(hidden_states).squeeze(-1)
         c_rewards = rewards[:c_num]
         r_rewards = rewards[c_num:]
-        c_lengths = mask['chosen'].sum(axis=1)
-        r_lengths = mask['rejected'].sum(axis=1)
-        or_mask = torch.logical_or(mask['chosen'], mask['rejected']).type(torch.long)
-        or_lengths = or_mask.sum(axis=1)
 
-        d_rewards = (c_rewards - r_rewards) * or_mask
-        r_last_reward = torch.gather(r_rewards, or_lengths, dim=1)
-        c_last_reward = torch.gather(c_rewards, or_lengths, dim=1)
-        divergence_mask = batch_get_mask_equal_or_larger_than_indices(
-            d_rewards, divergence_index
-        )
-        d_rewards = d_rewards * divergence_mask
-        weights = divergence_mask * or_mask
-
-        loss = -torch.log(torch.sigmoid(d_rewards))
-
-        loss = loss / weights.sum()
-
-        return {
-            "loss": loss,
-        }
+        # Calculate loss.
+        loss_dict = pairwise_loss(c_rewards=c_rewards, r_rewards=r_rewards,
+                                  c_mask=mask['chosen'], r_mask=mask['rejected'],
+                                  divergence_index=divergence_index)
+        return loss_dict

@@ -24,6 +24,7 @@ class RewardModelTest(unittest.TestCase):
         model = GPTRewardModel(self.hparams)
         self.assertIsNotNone(model)
 
+    # TODO: Check this test.
     def test_model_forward(self):
         model = GPTRewardModel(self.hparams)
         batch = next(iter(self.dl))
