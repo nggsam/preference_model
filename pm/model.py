@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from transformers import AutoModelForCausalLM
+from transformers import AutoModelForSequenceClassification
 
 from pm.data import get_tokenizer
 from pm.loss import pairwise_loss
@@ -46,7 +47,7 @@ class GPTRewardModel(nn.Module):
     # TODO: Separate out into a loss section instead.
     # TODO: Train to make sure that loss is going down.
     # TODO: Add metrics to measure accuracy while training.
-    def forward(self, input_ids, mask=None, inference=False, divergence_index=None):
+    def forward(self, input_ids, mask=None, inference=False, divergence_index=None, labels=None):
         # Concat 'chosen' and 'rejected' for batch computation of both.
         chosen_input_ids, rejected_input_ids = input_ids['chosen'], input_ids['rejected']
         c_num = chosen_input_ids.shape[0]

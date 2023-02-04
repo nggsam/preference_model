@@ -22,7 +22,7 @@ class DummyNN(nn.Module):
         )
         self.loss_fn = nn.MSELoss()
 
-    def forward(self, input_ids, mask=None):
+    def forward(self, input_ids, mask=None, labels=None):
         chosen = input_ids['chosen']
         rejected = input_ids['rejected']
 
@@ -48,6 +48,11 @@ class TestTrain(unittest.TestCase):
         self.assertEqual(hparams.tokenizer_type, 'EleutherAI/gpt-j-6B')
 
     def test_hf_trainer(self):
+        def compute_metrics(eval_pred):
+            del eval_pred  # Unused.
+
+            # Dummy metric.
+            return {'accuracy': 0.1}
 
         model = DummyNN()
         training_args = transformers.TrainingArguments(
@@ -75,13 +80,13 @@ class TestTrain(unittest.TestCase):
             args=training_args,
             train_dataset=train_ds,
             eval_dataset=eval_ds,
-            data_collator=default_collate
+            data_collator=default_collate,
+            compute_metrics=compute_metrics
         )
         trainer.train()
         done_training = True
 
         self.assertTrue(done_training)
-
 
 
 if __name__ == '__main__':

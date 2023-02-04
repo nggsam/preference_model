@@ -16,10 +16,6 @@ class HParams:
 def get_args_parser():
     """Initializes args parser and add arguments."""
     parser = HfArgumentParser(HParams)
-    # parser.add_argument('--pretrained_model', help='Pretrained model to load from initially.')
-    # parser.add_argument('--use_deepspeed', help='Whether to enable deepspeed.')
-    # parser.add_argument('--dataset_type', help='Type of dataset to train with.')
-    # parser.add_argument('--tokenizer_type', help='Type of tokenizer to process data with.')
 
     return parser
 
@@ -46,3 +42,8 @@ def batch_get_mask_equal_or_larger_than_indices(A, indices):
     arange = torch.arange(dim).tile(batch_size, 1)
     # Calculate the mask
     return (arange >= indices).type(torch.long)
+
+
+def make_tensor(values, dtype) -> torch.Tensor:
+    """Create PyTorch tensors with dtype."""
+    return torch.tensor(values, dtype=dtype)
