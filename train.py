@@ -13,15 +13,18 @@ from pm.data import get_tokenizer
 from pm.model import GPTRewardModel
 from pm.utils import HParams
 from pm.utils import get_args_parser
+from pm.utils import merge_training_args
 
 # TODO: Train to make sure that loss is going down.
 # TODO: Add metrics to measure accuracy while training.
 if __name__ == "__main__":
     parser = get_args_parser()
-    hparams: HParams = parser.parse_args_into_dataclasses()[0]
+    args = parser.parse_args_into_dataclasses()
+    hparams: HParams = args[0]
+    training_args: transformers.TrainingArguments = args[1]
     root_dir = pathlib.Path(hparams.root_dir)
 
-    training_args = transformers.TrainingArguments(
+    adhoc_training_args = transformers.TrainingArguments(
         output_dir=str(root_dir / "pm_checkpoint"),
         num_train_epochs=3,
         logging_steps=10,
@@ -41,6 +44,9 @@ if __name__ == "__main__":
         learning_rate=1e-5,
         deepspeed=str(root_dir / "deepspeed_config.json") if hparams.use_deepspeed else None,
     )
+
+    # Merges with training_args from parser args.
+    training_args = merge_training_args(adhoc_training_args, training_args)
 
     # Initialize the reward model.
     model = GPTRewardModel(hparams)
