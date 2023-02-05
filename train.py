@@ -11,7 +11,7 @@ from torch.utils.data import Subset
 
 from pm.data import PairwiseDataset
 from pm.data import get_tokenizer
-from pm.model import GPTRewardModel
+from pm.model import RewardModel
 from pm.utils import HParams
 from pm.utils import get_args_parser
 from pm.utils import merge_training_args
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     training_args = merge_training_args(adhoc_training_args, training_args)
 
     # Initialize the reward model.
-    model = GPTRewardModel(hparams)
+    model = RewardModel(hparams)
 
     tokenizer = get_tokenizer(hparams.tokenizer_type)
     # TODO: What's a good max length?
@@ -65,12 +65,12 @@ if __name__ == "__main__":
                               tokenizer=tokenizer,
                               max_length=hparams.max_length,
                               split='test')
-    mini_eval_ds = Subset(eval_ds, range(int(len(eval_ds) * hparams.eval_fraction)))
+    subset_eval_ds = Subset(eval_ds, range(int(len(eval_ds) * hparams.eval_fraction)))
     trainer = transformers.Trainer(
         model=model,
         args=training_args,
         train_dataset=train_ds,
-        eval_dataset=eval_ds,
+        eval_dataset=subset_eval_ds,
         data_collator=default_collate,
     )
     trainer.train()

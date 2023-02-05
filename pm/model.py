@@ -14,7 +14,7 @@ MODEL_TYPES = {
 }
 
 
-class GPTRewardModel(nn.Module):
+class RewardModel(nn.Module):
 
     def __init__(self, hparams: HParams):
         super().__init__()
