@@ -57,10 +57,10 @@ def _process_openai_summarize_comparisons(sample, tokenizer, max_length):
     # Get the index where trajectories between chosen and rejected diverge.
     divergence_indices = torch.nonzero(input_ids['chosen'] != input_ids['rejected'])
     if len(divergence_indices) == 0:
-        divergence_index = None
+        divergence_index = torch.tensor(len(input_ids['chosen'], dtype=torch.long))
     else:
         assert len(divergence_indices) > 0 and divergence_indices[0] > 0
-        divergence_index = divergence_indices[0]
+        divergence_index = divergence_indices[0].squeeze(-1)
 
     return {'input_ids': input_ids, 'mask': mask, 'divergence_index': divergence_index, 'labels': mask}
 

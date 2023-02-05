@@ -11,6 +11,8 @@ class HParams:
     dataset_type: str = 'CarperAI/openai_summarize_comparisons'
     tokenizer_type: str = 'EleutherAI/gpt-j-6B'
     use_deepspeed: bool = False
+    max_length: int = '300'
+    root_dir: str = './'
 
 
 def get_args_parser():
