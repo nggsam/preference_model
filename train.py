@@ -35,17 +35,11 @@ if __name__ == "__main__":
         gradient_accumulation_steps=1,
         save_strategy="steps",
         save_total_limit=3,
-        per_device_train_batch_size=1,
-        per_device_eval_batch_size=1,
         eval_accumulation_steps=1,
         evaluation_strategy="steps",
-        eval_steps=500,
-        save_steps=500,
-        warmup_steps=100,
         logging_dir=str(root_dir / "logs"),
         fp16=False,
         bf16=False,
-        learning_rate=1e-5,
         deepspeed=str(root_dir / "deepspeed_config.json") if hparams.use_deepspeed else None,
     )
 
