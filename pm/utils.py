@@ -41,7 +41,7 @@ def batch_get_mask_equal_or_larger_than_indices(A, indices):
     # Turn indices into the same shape as matrix A.
     indices = indices.unsqueeze(1).repeat(1, dim)
     # Get a 2D matrix that goes from 0 to dim-1 for each row of batch_size.
-    arange = torch.arange(dim).tile(batch_size, 1)
+    arange = torch.arange(dim).tile(batch_size, 1).to(A.device)
     # Calculate the mask
     return (arange >= indices).type(torch.long)
 
