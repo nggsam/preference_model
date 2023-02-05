@@ -15,6 +15,7 @@ class HParams:
     use_deepspeed: bool = False
     max_length: int = '300'
     root_dir: str = './'
+    eval_fraction: float = 1.0
 
 
 def get_args_parser():

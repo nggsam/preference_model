@@ -7,6 +7,7 @@ import pathlib
 
 import transformers
 from torch.utils.data import default_collate
+from torch.utils.data import Subset
 
 from pm.data import PairwiseDataset
 from pm.data import get_tokenizer
@@ -17,6 +18,9 @@ from pm.utils import merge_training_args
 
 # TODO: Train to make sure that loss is going down.
 # TODO: Add metrics to measure accuracy while training.
+# TODO: Try different configs:
+#          - Freeze some of the layers to avoid overfitting.
+#          - Train first layer for 0.1 epoch. Then train the other layers.
 if __name__ == "__main__":
     parser = get_args_parser()
     args = parser.parse_args_into_dataclasses()
@@ -61,6 +65,7 @@ if __name__ == "__main__":
                               tokenizer=tokenizer,
                               max_length=hparams.max_length,
                               split='test')
+    mini_eval_ds = Subset(eval_ds, range(int(len(eval_ds) * hparams.eval_fraction)))
     trainer = transformers.Trainer(
         model=model,
         args=training_args,
