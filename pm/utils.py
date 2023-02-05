@@ -59,6 +59,6 @@ def merge_training_args(fr: TrainingArguments, to: TrainingArguments):
 
     cp = copy.deepcopy(to)
     for key in fr.__dataclass_fields__:
-        cp[key] = fr[key]
+        cp.__dict__[key] = fr.__dict__[key]
 
     return cp
