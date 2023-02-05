@@ -1,7 +1,9 @@
+import copy
 import dataclasses
 
 import torch
 from transformers import HfArgumentParser
+from transformers import TrainingArguments
 
 
 @dataclasses.dataclass
@@ -17,7 +19,7 @@ class HParams:
 
 def get_args_parser():
     """Initializes args parser and add arguments."""
-    parser = HfArgumentParser(HParams)
+    parser = HfArgumentParser([HParams, TrainingArguments])
 
     return parser
 
@@ -49,3 +51,14 @@ def batch_get_mask_equal_or_larger_than_indices(A, indices):
 def make_tensor(values, dtype) -> torch.Tensor:
     """Create PyTorch tensors with dtype."""
     return torch.tensor(values, dtype=dtype)
+
+
+def merge_training_args(fr: TrainingArguments, to: TrainingArguments):
+    """Merges values in dataclass fr into to and returns a copy of to."""
+    assert type(fr) == type(to)
+
+    cp = copy.deepcopy(to)
+    for key in fr.__dataclass_fields__:
+        cp[key] = fr[key]
+
+    return cp
