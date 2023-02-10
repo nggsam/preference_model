@@ -15,7 +15,7 @@ idna==3.4
 multidict==6.0.4
 multiprocess==0.70.14
 ninja==1.11.1
-numpy==1.24.1
+numpy==1.22.0
 packaging==23.0
 pandas==1.5.3
 psutil==5.9.4

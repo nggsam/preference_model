@@ -1,3 +1,23 @@
 # Sample commands to train
-python train.py --pretrained_model=gpt2 --tokenizer_type=gpt2 --max_length=550 --eval_fraction=0.05 --output_dir=output
-
+python train.py \
+--pretrained_model=gpt2 \
+--tokenizer_type=gpt2 \
+--max_length=600 \
+--eval_fraction=0.05 \
+--output_dir=pm_checkpoint \
+--num_train_epochs=3 \
+--logging_steps=10 \
+--gradient_accumulation_steps=1 \
+--save_strategy=steps \
+--save_total_limit=3 \
+--per_device_train_batch_size=8 \
+--per_device_eval_batch_size=16 \
+--eval_accumulation_steps=1 \
+--evaluation_strategy=steps \
+--eval_steps=50 \
+--save_steps=50 \
+--warmup_steps=100 \
+--logging_dir=logs \
+--fp16=False \
+--bf16=False \
+--learning_rate=1e-5 \

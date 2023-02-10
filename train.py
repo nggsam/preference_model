@@ -28,29 +28,9 @@ if __name__ == "__main__":
     training_args: transformers.TrainingArguments = args[1]
     root_dir = pathlib.Path(hparams.root_dir)
 
-    adhoc_training_args = transformers.TrainingArguments(
-        output_dir=str(root_dir / "pm_checkpoint"),
-        num_train_epochs=3,
-        logging_steps=10,
-        gradient_accumulation_steps=1,
-        save_strategy="steps",
-        save_total_limit=3,
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=16,
-        eval_accumulation_steps=1,
-        evaluation_strategy="steps",
-        eval_steps=50,
-        save_steps=50,
-        warmup_steps=100,
-        logging_dir=str(root_dir / "logs"),
-        fp16=False,
-        bf16=False,
-        learning_rate=1e-5,
-        deepspeed=str(root_dir / "deepspeed_config.json") if hparams.use_deepspeed else None,
-    )
-
-    # Merges with training_args from parser args.
-    training_args = merge_training_args(adhoc_training_args, training_args)
+    # Use hparams to override some options in training_args.
+    if not hparams.use_deepspeed:
+        training_args.deepspeed = None
 
     # Initialize the reward model.
     model = RewardModel(hparams)
