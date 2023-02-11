@@ -5,6 +5,7 @@ import unittest
 import torch
 
 from pm.loss import batch_pairwise_loss
+from pm.loss import reward_ranking_accuracy_metric
 from pm.loss import pairwise_loss
 from pm.utils import make_tensor
 
@@ -51,6 +52,17 @@ class TestLosses(unittest.TestCase):
         self.assertTrue(torch.equal(loss_dict['chosen_last_rewards'], expected_a_last_rewards))
         self.assertTrue(torch.equal(loss_dict['rejected_last_rewards'], expected_b_last_rewards))
         self.assertEqual(loss_dict['loss'], expected_loss)
+
+
+class TestMetrics(unittest.TestCase):
+    def test_reward_ranking_accuracy_metric(self):
+        a_rewards = make_tensor([-1.4, 1.3, 0.2, 1.2], torch.float)
+        b_rewards = make_tensor([-1.0, 0.1, 0.2, 1.0], torch.float)
+        # [Bad, Good, Bad, Good] -> 2 / 4.
+
+        accuracy = reward_ranking_accuracy_metric(a_rewards, b_rewards)
+
+        self.assertEqual(accuracy.item(), 2 / 4.)
 
 
 if __name__ == '__main__':

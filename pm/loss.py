@@ -1,6 +1,10 @@
+import numpy as np
 import torch
+import transformers
 
 from pm.utils import batch_get_mask_equal_or_larger_than_indices
+
+Tensor = torch.Tensor
 
 
 def batch_pairwise_loss(c_rewards, r_rewards, c_mask, r_mask, divergence_index):
@@ -72,3 +76,49 @@ def pairwise_loss(c_rewards, r_rewards, c_mask, r_mask, divergence_index):
     return {'loss': loss,
             'chosen_last_rewards': torch.tensor(c_last_rewards),
             'rejected_last_rewards': torch.tensor(r_last_rewards)}
+
+
+def reward_ranking_accuracy_metric(a_rewards: Tensor, b_rewards: Tensor):
+    """Calculates the average of number of the times where a rewards are higher than b rewards.
+
+    Here we assume a rewards should be larger than b rewards.
+    Args:
+        a_rewards: 1D tensor of rewards for A.
+        b_rewards: 1D tensor of rewards for B.
+    Returns:
+        Tensor of type float for the average number of the times where a rewards are larger than b rewards.
+    """
+
+    if isinstance(a_rewards, np.ndarray):
+        a_rewards = torch.tensor(a_rewards)
+    if isinstance(b_rewards, np.ndarray):
+        b_rewards = torch.tensor(b_rewards)
+
+    assert len(a_rewards.shape) == 1
+    assert a_rewards.shape == b_rewards.shape
+
+    a_rewards: Tensor = a_rewards.type(torch.float)
+    b_rewards: Tensor = b_rewards.type(torch.float)
+
+    return (a_rewards > b_rewards).type(torch.float).mean()
+
+
+def compute_reward_metrics(eval_pred: transformers.trainer_utils.EvalPrediction):
+    """Computes metrics during evaluation for RewardModel.
+
+    Args:
+        eval_pred: EvalPrediction that has `predictions`, `inputs`, `label_ids`.
+    Returns:
+        A dict of metrics[str, value].
+    """
+
+    predictions = eval_pred.predictions
+    # RewardModel returns a_rewards (or chosen rewards) first and then b_rewards (rejected rewards).
+    # This is hard-coded as 0 and 1 index.
+    a_rewards = predictions[0]
+    b_rewards = predictions[1]
+
+    return {
+        'rank_accuracy': reward_ranking_accuracy_metric(a_rewards, b_rewards)
+    }
+
