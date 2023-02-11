@@ -10,24 +10,30 @@ from torch.utils.data import default_collate
 
 from pm.data import PairwiseDataset
 from pm.data import get_tokenizer
+from pm.loss import compute_reward_metrics
 from pm.model import RewardModel
 from pm.utils import HParams
 from pm.utils import get_args_parser
 from pm.utils import maybe_get_subset_dataset
+from pm.utils import seed_everything
 
 if __name__ == "__main__":
+    # Parse hparams and training_args.
     parser = get_args_parser()
     args = parser.parse_args_into_dataclasses()
     hparams: HParams = args[0]
     training_args: transformers.TrainingArguments = args[1]
     root_dir = pathlib.Path(hparams.root_dir)
 
+    # Seed.
+    seed_everything(training_args.seed)
+
     # Initialize the reward model.
     model = RewardModel(hparams)
 
     # Switch TrainingArgs dir to HParams root_dir.
-    training_args.output_dir = str(pathlib.Path(HParams.root_dir) / training_args.output_dir)
-    training_args.logging_dir = str(pathlib.Path(HParams.root_dir) / training_args.logging_dir)
+    setattr(training_args, 'output_dir',  str(root_dir / training_args.output_dir))
+    setattr(training_args, 'logging_dir',  str(root_dir / training_args.logging_dir))
 
     tokenizer = get_tokenizer(hparams.tokenizer_type)
     train_ds = PairwiseDataset(hparams.dataset_type,
@@ -48,5 +54,6 @@ if __name__ == "__main__":
         train_dataset=train_ds,
         eval_dataset=eval_ds,
         data_collator=default_collate,
+        compute_metrics=compute_reward_metrics
     )
     trainer.train()

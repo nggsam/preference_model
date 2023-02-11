@@ -80,3 +80,14 @@ def maybe_get_subset_dataset(dataset: Dataset, fraction: float):
         return ds
     else:
         return dataset
+
+
+def seed_everything(seed: int) -> None:
+    """Seeds PyTorch, random and Numpy."""
+    import torch
+    import random
+    import numpy as np
+
+    random.seed(seed)
+    torch.manual_seed(seed)
+    np.random.seed(seed)

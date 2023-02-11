@@ -21,7 +21,9 @@ class UtilsTest(unittest.TestCase):
         for fraction in (1.0, 0.1, 0.0):
             with self.subTest(fraction=fraction):
                 ds = maybe_get_subset_dataset(self.dataset, fraction)
-                self.assertEqual(len(ds), int(fraction * len(self.dataset)))
+                expected_length = int(fraction * len(self.dataset))
+                expected_length = max(expected_length, 1)
+                self.assertEqual(len(ds), expected_length)
 
     def test_maybe_get_subset_dataset_wrong_fraction(self):
         for fraction in (-0.1, 1.1):

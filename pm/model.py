@@ -43,7 +43,7 @@ class RewardModel(nn.Module):
         return model
 
     def forward(self, input_ids, mask=None, divergence_index=None, labels=None):
-        if not labels:
+        if labels is None:
             # Inference mode. Run only on 'chosen'.
             hidden_states = self.transformer(input_ids['chosen'], attention_mask=mask['chosen']).last_hidden_state
             rewards = self.v_head(hidden_states).squeeze(-1)

@@ -1,0 +1,28 @@
+# Sample commands to train
+deepspeed train.py \
+--seed=42 \
+--root_dir='./' \
+--pretrained_model=gpt2 \
+--tokenizer_type=gpt2 \
+--max_length=600 \
+--eval_fraction=0.01 \
+--train_fraction=0.1 \
+--output_dir=pm_checkpoint \
+--num_train_epochs=1 \
+--logging_steps=100 \
+--gradient_accumulation_steps=1 \
+--save_strategy=steps \
+--save_total_limit=3 \
+--save_steps=100 \
+--per_device_train_batch_size=8 \
+--per_device_eval_batch_size=64 \
+--eval_accumulation_steps=1 \
+--evaluation_strategy=steps \
+--eval_steps=100 \
+--logging_dir=logs \
+--fp16=True \
+--bf16=False \
+--learning_rate=1e-5 \
+--warmup_steps=1000 \
+--torch_compile=False \
+--deepspeed deepspeed_config.json \

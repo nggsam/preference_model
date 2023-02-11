@@ -5,56 +5,55 @@ import unittest
 import torch
 import torch.utils.data as torch_data
 
-from pm import data as data_module
+from pm.data import load_dataset
+from pm.data import process_openai_summarize_comparisons
+from pm.data import get_tokenizer
+from pm.data import PairwiseDataset
 
 
 class TestPairwiseDataset(unittest.TestCase):
     def test_get_tokenizer(self):
         for tokenizer_type in ('EleutherAI/gpt-j-6B',):
             with self.subTest(tokenizer_type=tokenizer_type):
-                tokenizer = data_module.get_tokenizer(tokenizer_type)
+                tokenizer = get_tokenizer(tokenizer_type)
                 self.assertIsNotNone(tokenizer)
                 self.assertTrue(getattr(tokenizer, 'pad_token'))
                 # TODO: Add more tests with tokenize results.
 
-    def test_init(self):
-        data = [{'chosen': 'prompt item0', 'rejected': 'prompt item1'},
-                {'chosen': 'prompt item2', 'rejected': 'prompt item3'}]
+    def test_create_summarize_comparison_dataset_train(self):
+        dataset = load_dataset('CarperAI/openai_summarize_comparisons', split='train')
+        self.assertIsNotNone(dataset)
+        self.assertEqual(len(dataset), 92534)
 
-        tokenizer = data_module.get_tokenizer('EleutherAI/gpt-j-6B')
-        ds = data_module.PairwiseDataset(data, tokenizer, 32)
-
-        self.assertIsNotNone(ds)
-
-    def test_create_summarize_comparison_dataset(self):
-        ds = data_module.preprocess_dataset('CarperAI/openai_summarize_comparisons', split='test')
-        self.assertIsNotNone(ds)
-        self.assertEqual(len(ds), 92534)
+    def test_create_summarize_comparison_dataset_test(self):
+        dataset = load_dataset('CarperAI/openai_summarize_comparisons', split='test')
+        self.assertIsNotNone(dataset)
+        self.assertEqual(len(dataset), 83629)
 
     def test_dataloader(self):
         batch_size = 16
         max_length = 520
-        tokenizer = data_module.get_tokenizer('EleutherAI/gpt-j-6B')
+        tokenizer = get_tokenizer('EleutherAI/gpt-j-6B')
 
         # Make pairwise datasets for training
-        ds = data_module.PairwiseDataset('CarperAI/openai_summarize_comparisons',
-                                         tokenizer,
-                                         max_length=max_length,
-                                         split='test')
+        ds = PairwiseDataset('CarperAI/openai_summarize_comparisons',
+                             tokenizer,
+                             max_length=max_length,
+                             split='test')
 
         dl = torch_data.DataLoader(ds, batch_size=batch_size, shuffle=False)
 
         batch = next(iter(dl))
         self.assertIsNotNone(batch)
         # Expected keys.
-        self.assertSetEqual(set(batch.keys()), {'input_ids', 'mask', 'divergence_index'})
+        self.assertSetEqual(set(batch.keys()), {'input_ids', 'mask', 'divergence_index', 'labels'})
         # Expected shapes.
         self.assertEqual(batch['input_ids']['chosen'].shape,
                          (batch_size, max_length))
         self.assertEqual(batch['mask']['chosen'].shape,
                          (batch_size, max_length))
         self.assertEqual(batch['divergence_index'].shape,
-                         (batch_size, 1))
+                         (batch_size,))
 
         # Expected true lengths (before padding).
         lengths = batch['mask']['chosen'].sum(dim=1)

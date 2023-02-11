@@ -6,7 +6,7 @@ from torch.utils.data import Subset, DataLoader
 
 from pm.data import PairwiseDataset
 from pm.data import get_tokenizer
-from pm.model import GPTRewardModel
+from pm.model import RewardModel
 from pm.utils import HParams
 
 
@@ -21,12 +21,12 @@ class RewardModelTest(unittest.TestCase):
         self.dl = DataLoader(self.ds, batch_size=4, shuffle=False)
 
     def test_model_init(self):
-        model = GPTRewardModel(self.hparams)
+        model = RewardModel(self.hparams)
         self.assertIsNotNone(model)
 
     # TODO: Check this test.
     def test_model_forward(self):
-        model = GPTRewardModel(self.hparams)
+        model = RewardModel(self.hparams)
         batch = next(iter(self.dl))
 
         model(**batch)

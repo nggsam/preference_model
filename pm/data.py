@@ -17,7 +17,7 @@ DATASET_TYPES = {
 SPLIT_TYPES = {'train', 'test'}
 
 
-def _process_openai_summarize_comparisons(sample, tokenizer, max_length):
+def process_openai_summarize_comparisons(sample, tokenizer, max_length):
     """Preprocesses OpenAI Summarize Comparisons dataset.
 
     Args:
@@ -62,7 +62,7 @@ def _process_openai_summarize_comparisons(sample, tokenizer, max_length):
         assert len(divergence_indices) > 0 and divergence_indices[0] > 0
         divergence_index = divergence_indices[0].squeeze(-1)
 
-    return {'input_ids': input_ids, 'mask': mask, 'divergence_index': divergence_index, 'labels': mask}
+    return {'input_ids': input_ids, 'mask': mask, 'divergence_index': divergence_index, 'labels': mask['chosen']}
 
 
 def get_tokenizer(tokenizer_type: str):
@@ -104,7 +104,7 @@ class PairwiseDataset(Dataset):
 
         if dataset_type == 'CarperAI/openai_summarize_comparisons':
             self._dataset = load_dataset(dataset_path, split=split)
-            self._process_fn = _process_openai_summarize_comparisons
+            self._process_fn = process_openai_summarize_comparisons
         else:
             raise ValueError(dataset_type)
 

@@ -12,7 +12,7 @@ Trains and compares a variety of preference models (reward models) with differen
   - [ ] Freeze some of the layers to avoid overfitting.
   - [ ] Train first layer for 0.1 epoch. Then train the other layers.
 - [ ] Deepspeed with a config file.
-- [ ] Try Deepspeed training.
+- [x] Add Deepspeed config and try Deepspeed training.
 - [ ] Try PyTorch compile.
 - [ ] Compare different losses.
 - [ ] Compare different datasets.
