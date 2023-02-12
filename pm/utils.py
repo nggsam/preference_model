@@ -18,9 +18,11 @@ class HParams:
     tokenizer_type: str = 'EleutherAI/gpt-j-6B'
     use_deepspeed: bool = False
     max_length: int = '300'
-    root_dir: str = './'
+    root_dir: str = './root/'
     eval_fraction: float = 1.0
     train_fraction: float = 1.0
+    expt: str = 'expt'
+    wandb: bool = False
 
 
 def get_args_parser():

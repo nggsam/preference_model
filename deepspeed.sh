@@ -1,7 +1,9 @@
 # Sample commands to train
 deepspeed train.py \
+--wandb=True \
 --seed=42 \
 --root_dir='./' \
+--expt='debugging' \
 --pretrained_model=gpt2 \
 --tokenizer_type=gpt2 \
 --max_length=600 \
@@ -9,11 +11,13 @@ deepspeed train.py \
 --train_fraction=0.1 \
 --output_dir=pm_checkpoint \
 --num_train_epochs=1 \
---logging_steps=100 \
+--logging_steps=10 \
 --gradient_accumulation_steps=1 \
 --save_strategy=steps \
 --save_total_limit=3 \
 --save_steps=100 \
+--metric_for_best_model="eval_rank_accuracy" \
+--greater_is_better=True \
 --per_device_train_batch_size=8 \
 --per_device_eval_batch_size=64 \
 --eval_accumulation_steps=1 \

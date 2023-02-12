@@ -3,10 +3,12 @@
 This is the main entry point to train a preference model (or reward model). WIP.
 """
 
+import time
 import pathlib
 
 import transformers
 from torch.utils.data import default_collate
+import wandb
 
 from pm.data import PairwiseDataset
 from pm.data import get_tokenizer
@@ -23,7 +25,17 @@ if __name__ == "__main__":
     args = parser.parse_args_into_dataclasses()
     hparams: HParams = args[0]
     training_args: transformers.TrainingArguments = args[1]
-    root_dir = pathlib.Path(hparams.root_dir)
+    # Add timestamp and expt name to root_dir.
+    expt_timestamp = int(time.time())
+    expt_name = f'{hparams.expt}_{expt_timestamp}'
+    expt_dir = pathlib.Path(hparams.root_dir) / expt_name
+    expt_dir.mkdir(exist_ok=True, parents=True)
+
+    # Enable WANDB.
+    if hparams.wandb:
+        wandb.init(project=hparams.expt, sync_tensorboard=True, dir=expt_dir, name=expt_name)
+        wandb.config.update(hparams)
+        wandb.config.update(training_args)
 
     # Seed.
     seed_everything(training_args.seed)
@@ -31,9 +43,9 @@ if __name__ == "__main__":
     # Initialize the reward model.
     model = RewardModel(hparams)
 
-    # Switch TrainingArgs dir to HParams root_dir.
-    setattr(training_args, 'output_dir',  str(root_dir / training_args.output_dir))
-    setattr(training_args, 'logging_dir',  str(root_dir / training_args.logging_dir))
+    # Switch TrainingArgs dir to HParams expt_dir.
+    setattr(training_args, 'output_dir',  str(expt_dir / training_args.output_dir))
+    setattr(training_args, 'logging_dir',  str(expt_dir / training_args.logging_dir))
 
     tokenizer = get_tokenizer(hparams.tokenizer_type)
     train_ds = PairwiseDataset(hparams.dataset_type,

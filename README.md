@@ -17,6 +17,7 @@ Trains and compares a variety of preference models (reward models) with differen
 - [ ] Compare different losses.
 - [ ] Compare different datasets.
 - [ ] Add synthetic datasets.
+- [x] Incorporate WANDB to keep track of experiments.
  
 ### Resources
 - Code forked from https://github.com/CarperAI/trlx/tree/main/examples/summarize_rlhf.
