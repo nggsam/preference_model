@@ -14,6 +14,7 @@ Tensor = torch.Tensor
 class HParams:
     """Hyperparameters class with default values."""
     pretrained_model: str = 'CarperAI/openai_summarize_tldr_sft'
+    reward_model_type: str = 'per_token'
     dataset_type: str = 'CarperAI/openai_summarize_comparisons'
     tokenizer_type: str = 'EleutherAI/gpt-j-6B'
     use_deepspeed: bool = False

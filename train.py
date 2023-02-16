@@ -13,7 +13,7 @@ import wandb
 from pm.data import PairwiseDataset
 from pm.data import get_tokenizer
 from pm.loss import compute_reward_metrics
-from pm.model import RewardModel
+from pm.model import get_reward_model
 from pm.utils import HParams
 from pm.utils import get_args_parser
 from pm.utils import maybe_get_subset_dataset
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     seed_everything(training_args.seed)
 
     # Initialize the reward model.
-    model = RewardModel(hparams)
+    model = get_reward_model(hparams)
 
     # Switch TrainingArgs dir to HParams expt_dir.
     setattr(training_args, 'output_dir',  str(expt_dir / training_args.output_dir))

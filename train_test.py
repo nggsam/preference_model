@@ -1,5 +1,6 @@
 """Tests for training module."""
 
+import os
 import pathlib
 import unittest
 
@@ -10,7 +11,7 @@ import transformers
 from pm.data import get_tokenizer
 from pm.data import PairwiseDataset
 from pm.loss import compute_reward_metrics
-from pm.model import RewardModel
+from pm.model import get_reward_model
 from pm.utils import get_args_parser
 from pm.utils import HParams, TrainingArguments
 from pm.utils import maybe_get_subset_dataset
@@ -45,6 +46,9 @@ class DummyNN(nn.Module):
 
 
 class TestTrain(unittest.TestCase):
+    def setUp(self) -> None:
+        os.environ["WANDB_DISABLED"] = "true"
+
     def test_hf_trainer_dummy(self):
         def compute_metrics(eval_pred):
             import random
@@ -95,7 +99,7 @@ class TestTrain(unittest.TestCase):
 
         self.assertTrue(done_training)
 
-    def test_hf_trainer_gpt2(self):
+    def test_hf_trainer_gpt2_per_token_reward_model(self):
         training_args = transformers.TrainingArguments(
             output_dir="out",
             logging_dir="logs",
@@ -118,14 +122,75 @@ class TestTrain(unittest.TestCase):
                           max_length=600,
                           eval_fraction=0.000001,
                           train_fraction=0.00001,
-                          root_dir='/tmp/')
+                          root_dir='/tmp/',
+                          reward_model_type='per_token'
+                          )
 
         # Switch TrainingArgs dir to HParams root_dir.
         setattr(training_args, 'output_dir',  str(pathlib.Path(hparams.root_dir) / training_args.output_dir))
         setattr(training_args, 'logging_dir',  str(pathlib.Path(hparams.root_dir) / training_args.logging_dir))
 
         # Initialize the reward model.
-        model = RewardModel(hparams)
+        model = get_reward_model(hparams)
+        tokenizer = get_tokenizer(hparams.tokenizer_type)
+        train_ds = PairwiseDataset(hparams.dataset_type,
+                                   tokenizer=tokenizer,
+                                   max_length=hparams.max_length,
+                                   split='train')
+        eval_ds = PairwiseDataset(hparams.dataset_type,
+                                  tokenizer=tokenizer,
+                                  max_length=hparams.max_length,
+                                  split='test')
+        # Subset train and eval if train/eval_fraction < 1.0.
+        train_ds = maybe_get_subset_dataset(train_ds, hparams.train_fraction)
+        eval_ds = maybe_get_subset_dataset(eval_ds, hparams.eval_fraction)
+
+        trainer = transformers.Trainer(
+            model=model,
+            args=training_args,
+            train_dataset=train_ds,
+            eval_dataset=eval_ds,
+            data_collator=default_collate,
+            compute_metrics=compute_reward_metrics,
+        )
+        trainer.train()
+        done_training = True
+
+        self.assertTrue(done_training)
+
+    def test_hf_trainer_gpt2_pool_reward_model(self):
+        training_args = transformers.TrainingArguments(
+            output_dir="out",
+            logging_dir="logs",
+            num_train_epochs=1,
+            logging_steps=1,
+            learning_rate=1e-5,
+            evaluation_strategy='steps',
+            eval_steps=1,
+            per_device_train_batch_size=2,
+            torch_compile=False,
+            save_total_limit=1,
+            save_strategy="steps",
+            save_steps=1,
+            metric_for_best_model="eval_rank_accuracy",
+            greater_is_better=True,  # For loss only. Need to change if using accuracy.
+        )
+        hparams = HParams(pretrained_model='gpt2',
+                          tokenizer_type='gpt2',
+                          dataset_type='CarperAI/openai_summarize_comparisons',
+                          max_length=600,
+                          eval_fraction=0.000001,
+                          train_fraction=0.00001,
+                          root_dir='/tmp/',
+                          reward_model_type='pool'
+                          )
+
+        # Switch TrainingArgs dir to HParams root_dir.
+        setattr(training_args, 'output_dir', str(pathlib.Path(hparams.root_dir) / training_args.output_dir))
+        setattr(training_args, 'logging_dir', str(pathlib.Path(hparams.root_dir) / training_args.logging_dir))
+
+        # Initialize the reward model.
+        model = get_reward_model(hparams)
         tokenizer = get_tokenizer(hparams.tokenizer_type)
         train_ds = PairwiseDataset(hparams.dataset_type,
                                    tokenizer=tokenizer,

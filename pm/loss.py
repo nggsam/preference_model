@@ -78,6 +78,30 @@ def pairwise_loss(c_rewards, r_rewards, c_mask, r_mask, divergence_index):
             'rejected_last_rewards': torch.tensor(r_last_rewards)}
 
 
+def binary_crossentropy_ranking_loss(a_rewards, b_rewards, labels):
+    """Calculate ranking loss of a vs b based on labels.
+
+    We calculate the ranking loss based on binary crossentropy of difference between a_rewards and b_rewards.
+    Label of 1 means the chosen one while 0 means rejected.
+
+    Args:
+        a_rewards: 1D tensor of float.
+        b_rewards: 1D tensor of float.
+        labels: 1D tensor of 0 or 1.
+    Returns:
+        Binary cross entropy ranking loss of a_rewards and b_rewards based on labels.
+    """
+    assert a_rewards.shape == b_rewards.shape and a_rewards.shape == labels.shape
+
+    logits = a_rewards - b_rewards
+    log_p = torch.nn.functional.logsigmoid(logits)
+    log_not_p = torch.nn.functional.logsigmoid(-logits)
+
+    losses = -1. * (labels * log_p + (1 - labels) * log_not_p)
+    # TODO: mean() or sum()?
+    return losses.mean()
+
+
 def reward_ranking_accuracy_metric(a_rewards: Tensor, b_rewards: Tensor):
     """Calculates the average of number of the times where a rewards are higher than b rewards.
 
@@ -121,4 +145,3 @@ def compute_reward_metrics(eval_pred: transformers.trainer_utils.EvalPrediction)
     return {
         'rank_accuracy': reward_ranking_accuracy_metric(a_rewards, b_rewards)
     }
-

@@ -6,7 +6,7 @@ from torch.utils.data import Subset, DataLoader
 
 from pm.data import PairwiseDataset
 from pm.data import get_tokenizer
-from pm.model import RewardModel
+from pm.model import BaseRewardModel, PerTokenRewardModel, PoolRewardModel
 from pm.utils import HParams
 
 
@@ -21,16 +21,20 @@ class RewardModelTest(unittest.TestCase):
         self.dl = DataLoader(self.ds, batch_size=4, shuffle=False)
 
     def test_model_init(self):
-        model = RewardModel(self.hparams)
+        model = BaseRewardModel(self.hparams)
         self.assertIsNotNone(model)
 
-    # TODO: Check this test.
-    def test_model_forward(self):
-        model = RewardModel(self.hparams)
+    def test_per_token_model_forward(self):
+        model = PerTokenRewardModel(self.hparams)
         batch = next(iter(self.dl))
+        output = model(**batch)
+        self.assertIsNotNone(output)
 
-        model(**batch)
-
+    def test_pool_model_forward(self):
+        model = PoolRewardModel(self.hparams)
+        batch = next(iter(self.dl))
+        output = model(**batch)
+        self.assertIsNotNone(output)
 
 
 if __name__ == '__main__':
