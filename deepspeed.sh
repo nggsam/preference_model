@@ -4,6 +4,7 @@ deepspeed train.py \
 --seed=42 \
 --root_dir='./' \
 --expt='debugging' \
+--reward_model_type=per_token \
 --pretrained_model=gpt2 \
 --tokenizer_type=gpt2 \
 --max_length=600 \
