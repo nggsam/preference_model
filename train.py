@@ -6,8 +6,8 @@ This is the main entry point to train a preference model (or reward model). WIP.
 import time
 import pathlib
 
-import transformers
 from torch.utils.data import default_collate
+import transformers
 import wandb
 
 from pm.data import PairwiseDataset

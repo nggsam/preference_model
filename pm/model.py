@@ -133,8 +133,8 @@ class PoolRewardModel(BaseRewardModel):
         r_rewards = rewards[c_num:]
 
         # Calculate loss.
-        # We know that ranking labels are all 0 as chosen rewards are the one that should get higher rewards.
-        ranking_labels = torch.zeros_like(c_rewards).to(chosen_input_ids.device)
+        # We know that ranking labels are all ones as chosen rewards are the one that should get higher rewards.
+        ranking_labels = torch.ones_like(c_rewards).to(chosen_input_ids.device)
         loss = binary_crossentropy_ranking_loss(c_rewards, r_rewards, ranking_labels)
 
         return {'loss': loss,

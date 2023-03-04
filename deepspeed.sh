@@ -20,8 +20,8 @@ deepspeed train.py \
 --save_steps=1000 \
 --metric_for_best_model="eval_rank_accuracy" \
 --greater_is_better=True \
---per_device_train_batch_size=8 \
---per_device_eval_batch_size=16 \
+--per_device_train_batch_size=32 \
+--per_device_eval_batch_size=32 \
 --eval_accumulation_steps=1 \
 --evaluation_strategy=steps \
 --eval_steps=1000 \
