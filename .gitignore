@@ -1,3 +1,4 @@
 /.idea/
 pm/__pycache__/
 debugging*
+wandb/

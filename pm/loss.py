@@ -103,9 +103,9 @@ def binary_crossentropy_ranking_loss(a_rewards, b_rewards, labels):
 
 
 def reward_ranking_accuracy_metric(a_rewards: Tensor, b_rewards: Tensor):
-    """Calculates the average of number of the times where a rewards are higher than b rewards.
+    """Calculates the average of number of the times where A rewards are higher than B rewards.
 
-    Here we assume a rewards should be larger than b rewards.
+    Here we assume A rewards should be larger than B rewards.
     Args:
         a_rewards: 1D tensor of rewards for A.
         b_rewards: 1D tensor of rewards for B.
