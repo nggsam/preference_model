@@ -5,7 +5,8 @@ deepspeed train.py \
 --root_dir='./' \
 --expt='debugging' \
 --reward_model_type=pool \
---pretrained_model=gpt2-large \
+--freeze_backbone_layers_ratio=0.5 \
+--pretrained_model=gpt2-medium \
 --tokenizer_type=gpt2 \
 --max_length=600 \
 --eval_fraction=0.1 \
@@ -32,3 +33,4 @@ deepspeed train.py \
 --torch_compile=False \
 --auto_find_batch_size=True \
 --deepspeed deepspeed_config.json \
+

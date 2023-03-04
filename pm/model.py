@@ -1,3 +1,4 @@
+import logging
 import torch
 from torch import nn
 from transformers import AutoModelForCausalLM
@@ -5,6 +6,7 @@ from transformers import AutoModelForCausalLM
 from pm.data import get_tokenizer
 from pm.loss import batch_pairwise_loss, binary_crossentropy_ranking_loss
 from pm.utils import HParams
+from pm.utils import maybe_freeze_layers
 
 # Pretrained model name -> Path to model weights (online or offline loading).
 PRETRAINED_MODEL_TYPES = {
@@ -140,14 +142,24 @@ class PoolRewardModel(BaseRewardModel):
                 'r_rewards': r_rewards}
 
 
+    
 def get_reward_model(hparams: HParams):
     """Gets reward model."""
     reward_model_type = hparams.reward_model_type
     assert reward_model_type in REWARD_MODEL_TYPES
 
+    model = None
     if reward_model_type == 'pool':
-        return PoolRewardModel(hparams)
+        model = PoolRewardModel(hparams)
     elif reward_model_type == 'per_token':
-        return PerTokenRewardModel(hparams)
+        model = PerTokenRewardModel(hparams)
     else:
-        raise ValueError(reward_model_type, f'Unexpected tokenizer type: {reward_model_type}')
+        raise ValueError(reward_model_type, f'Unexpected reward_model_type: {reward_model_type}')
+    
+
+    model = maybe_freeze_layers(model, hparams.freeze_backbone_layers_ratio)
+
+    return model
+    
+    
+

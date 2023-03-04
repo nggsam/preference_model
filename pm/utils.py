@@ -24,6 +24,7 @@ class HParams:
     train_fraction: float = 1.0
     expt: str = 'expt'
     wandb: bool = False
+    freeze_backbone_layers_ratio: float = 0.0
 
 
 def get_args_parser():
@@ -94,3 +95,34 @@ def seed_everything(seed: int) -> None:
     random.seed(seed)
     torch.manual_seed(seed)
     np.random.seed(seed)
+
+
+def maybe_freeze_layers(model: torch.nn.Module, freeze_ratio: float):
+    """Freezes hidden layers of a model based on some freeze_ratio.
+
+    Hidden layers are accessed with 'model.transformer.h'. Freezeing operation
+    is in-place.
+    
+    Args:
+        freeze_ratio: A float to calculate the numbers of layers to freeze.
+    Returns:
+        The model with numbers of layers (from beginning to end) frozen based on freeze_ratio.
+    """
+    if freeze_ratio == 0.0:
+        return model
+
+    if freeze_ratio < 0.0 or freeze_ratio > 1.0:
+        raise ValueError(f'Unexpected freeze_ratio: {freeze_ratio}')
+
+    if not (hasattr(model, 'transformer') and hasattr(model.transformer, 'h')):
+        raise ValueError('Model does not have model.transformer.h attribute to freeze layers.')
+
+    hidden_layers = model.transformer.h
+    num_layers = len(hidden_layers)
+    num_frozen = int(freeze_ratio * num_layers)
+    
+    for layer in hidden_layers[:num_frozen]:
+        # In-place.
+        layer.requires_grad_(False)
+    
+    return model
