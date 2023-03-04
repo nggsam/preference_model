@@ -4,8 +4,8 @@ deepspeed train.py \
 --seed=42 \
 --root_dir='./' \
 --expt='debugging' \
---reward_model_type=per_token \
---pretrained_model=gpt2 \
+--reward_model_type=pool \
+--pretrained_model=gpt2-large \
 --tokenizer_type=gpt2 \
 --max_length=600 \
 --eval_fraction=0.1 \
@@ -20,7 +20,7 @@ deepspeed train.py \
 --metric_for_best_model="eval_rank_accuracy" \
 --greater_is_better=True \
 --per_device_train_batch_size=8 \
---per_device_eval_batch_size=64 \
+--per_device_eval_batch_size=16 \
 --eval_accumulation_steps=1 \
 --evaluation_strategy=steps \
 --eval_steps=1000 \
@@ -30,4 +30,5 @@ deepspeed train.py \
 --learning_rate=1e-5 \
 --warmup_steps=1000 \
 --torch_compile=False \
+--auto_find_batch_size=True \
 --deepspeed deepspeed_config.json \
